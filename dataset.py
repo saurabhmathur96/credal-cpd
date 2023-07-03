@@ -25,6 +25,18 @@ class Dataset:
                        self.cardinality,
                        self.names,
                        self.monotonicities)
+
+    def compute_counts(self, variable, parents):
+        value_counts = self.frame[[variable, *parents]].value_counts()
+        cardinality = self.cardinality
+        parent_card = [cardinality[v] for v in parents]
+        variable_card = cardinality[variable]
+        counts = np.zeros((np.prod(parent_card), variable_card))
+        for i, value in enumerate(np.ndindex(*parent_card)):
+            for j in range(variable_card):
+                counts[i, j] = value_counts.get((j, *value), 0)
+        return counts
+        
 def read_dataset(name: set):
     if name == "heart_disease":
         names = ["age", "sex", "cp", "trestbps", "chol", "fbs", "restecg", "thalach", "exang", "oldpeak", "slope", "ca",
