@@ -1,5 +1,5 @@
 from scipy.optimize import minimize, Bounds
-
+import numpy as np
 
 def learn_cpd(variable, parents, counts, monotonicities, epsilon=0.001, s=1, lower=True, tolerance=1e-6):
   cases = np.array(list(np.ndindex(*parent_card)))
