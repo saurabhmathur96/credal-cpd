@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 from sklearn.base import BaseEstimator, ClassifierMixin
 from sklearn.utils.validation import check_X_y, check_array, check_is_fitted
 from sklearn.utils.multiclass import unique_labels
@@ -13,7 +14,7 @@ class CredalClassifier(BaseEstimator, ClassifierMixin):
         self.target = target 
         self.parents = parents
 
-    def fit(self, X, y, C):
+    def fit(self, X, y, monotonicities):
         # Check that X and y have correct shape
         X, y = check_X_y(X, y)
         # Store the classes seen during fit
@@ -26,20 +27,21 @@ class CredalClassifier(BaseEstimator, ClassifierMixin):
         self.cases = np.array(list(np.ndindex(*parent_cards)))
 
         df = pd.DataFrame(X, columns = self.parents)
-        df[target] = y
-        value_counts = df[[variable, *self.parents]].value_counts()
+        df[self.target] = y
+        value_counts = df[[self.target, *self.parents]].value_counts()
         
         counts = np.zeros((np.prod(parent_cards), target_card))
         for i, value in enumerate(self.cases):
             for j in range(target_card):
                 counts[i, j] = value_counts.get((j, *value), 0) + 1e-6
 
-        for s in range(s, sn+1):
+        for s in range(self.s0, self.sn+1):
             t_lower, t_upper, penalty_lower, penalty_upper = compute_bounds(self.target, self.parents, self.cardinality, 
-                            cases, counts, monotonicities, 
+                            self.cases, counts, monotonicities, 
                             s=s, epsilon=0.001, tolerance=1e-6)
             if penalty_lower + penalty_lower < 1e-6:
                 break
+        self.counts = counts
         self.p_lower = idm(counts, s, t_lower)
         self.p_upper =  idm(counts, s, t_upper)
         # Return the classifier
@@ -52,9 +54,15 @@ class CredalClassifier(BaseEstimator, ClassifierMixin):
         # Input validation
         X = check_array(X)
         parent_cards = np.array([self.cardinality[name] for name in self.parents])
-        factor = np.prod(parent_cards)/parent_cards
+        factor = np.prod(parent_cards)/np.cumprod(parent_cards)
         indices = np.dot(X, factor).astype(int)
-        # To Do: make prediction based on overlap
-        self.p_lower[indices, :], self.p_upper[indices, :]
-        # closest = np.argmin(euclidean_distances(X, self.X_), axis=1)
-        return self.y_[closest]
+        y_pred = []
+        # make prediction based on overlap
+        for l, u in zip(self.p_lower[indices, :], self.p_upper[indices, :]):
+            if l[1] > u[0]:
+                y_pred.append(1)
+            elif l[0] > u[1]:
+                y_pred.append(0)
+            else:
+                y_pred.append(-1)
+        return np.array(y_pred)

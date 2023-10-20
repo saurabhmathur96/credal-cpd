@@ -24,7 +24,7 @@ def get_dataset(name: str):
             ("age", -1)
         ]
         synergies = []
-        return df, target, synergies, monotonicities
+        return df, cardinality, target, synergies, monotonicities
 
     elif name == "breast-cancer":
         path = os.path.join(base, "breast-cancer.data")
@@ -58,11 +58,11 @@ def get_dataset(name: str):
         }, inplace=True)
         df.irradiat = (df.irradiat == "yes")
         df = df.astype(int)
-
+        cardinality = { column: df[column].max() + 1 for column in df.columns }
         target = "recurrence"
         synergies = [("age", "menopause", +1), ("irradiat", "deg_malig", -1), ("irradiat", "tumor_size", -1)]
         monotonicities = [("age", +1), ("menopause", +1), ("deg_malig", +1), ("tumor_size", +1), ("irradiat", -1)]
-        return df, target, synergies, monotonicities
+        return df, cardinality, target, synergies, monotonicities
     
     elif name == "diabetes":
         path = os.path.join(base, "diabetes.csv")
@@ -80,10 +80,11 @@ def get_dataset(name: str):
         df.Glucose = pd.cut(df.Glucose, [-np.inf, 89, 107, 123, 143, np.inf], labels = np.arange(5))
 
         df = df.astype(int)
+        cardinality = { column: df[column].max() + 1 for column in df.columns }
         target = "Outcome"
         synergies = [("Age", "Pregnancies", -1)]
         monotonicities = [("Age", +1), ("Pregnancies", +1), ("BMI", +1), ("DiabetesPedigreeFunction", +1)]
-        return df, target, synergies, monotonicities
+        return df, cardinality, target, synergies, monotonicities
     elif name == "thyroid":
         path = os.path.join(base, "new-thyroid.data")
         columns = ["Hyperthyroid", "T3_resin", "T4", "T3", "TSH", "TSH_diff"]
@@ -99,7 +100,8 @@ def get_dataset(name: str):
         monotonicities = [("T3_resin", +1), ("T3", +1), ("TSH", +1), ("TSH_diff", +1), ("T4", +1)]
 
         df = df.astype(int)
-        return df, target, synergies, monotonicities
+        cardinality = { column: df[column].max() + 1 for column in df.columns }
+        return df, cardinality, target, synergies, monotonicities
     elif name == "heart-disease":
         path = os.path.join(base, "processed.cleveland.data")
         columns = ["age", "sex", "cp", "trestbps", "chol", "diabetes", 
@@ -116,7 +118,8 @@ def get_dataset(name: str):
         monotonicities = [("sex", +1), ("age", +1), ("trestbps", +1), ("chol",+1), ("diabetes",+1)]
 
         df = df.astype(int)
-        return df, target, synergies, monotonicities
+        cardinality = { column: df[column].max() + 1 for column in df.columns }
+        return df, cardinality, target, synergies, monotonicities
     
     elif name == "hepatitis":
         pass

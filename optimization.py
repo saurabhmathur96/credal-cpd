@@ -34,22 +34,22 @@ def compute_bounds(variable, parents, cardinality, cases, counts, monotonicities
   for i in range(10):
     weight =  10**i
     f_lower = lambda x: np.sum(x) + weight*constraint(x)
-    res_lower = minimize(f, x0=x0_lower, bounds=bounds)  
+    res_lower = minimize(f_lower, x0=x0_lower, bounds=bounds)  
     x0_lower = np.clip(res_lower.x, 0, 1)
     
-    if constraint(x0_lower, s) < tolerance:
+    if constraint(x0_lower) < tolerance:
       break 
   
   for i in range(10):
     weight =  10**i
     f_upper = lambda x: -np.sum(x) + weight*constraint(x)
-    res_upper = minimize(f, x0=x0_upper, bounds=bounds)  
+    res_upper = minimize(f_upper, x0=x0_upper, bounds=bounds)  
     x0_upper = np.clip(res_upper.x, 0, 1)
     
-    if constraint(x0_upper, s) < tolerance:
+    if constraint(x0_upper) < tolerance:
       break 
   
   t_lower = x0_lower.reshape(counts.shape)
   t_upper = x0_upper.reshape(counts.shape)
-  return t_lower, t_upper, constraint(x0_lower, s), constraint(x0_upper, s)
+  return t_lower, t_upper, constraint(x0_lower), constraint(x0_upper)
 
