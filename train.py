@@ -1,10 +1,13 @@
+from model import *
 from datasets import get_dataset
 from sklearn.model_selection import StratifiedKFold
+from sklearn.metrics import accuracy_score
 import numpy as np
 from tqdm import tqdm
 
-for name in ["haberman", "diabetes", "breast-cancer", "thyroid", "heart-disease"]
-    df, cardinality, target, synergies, monotonicities = get_dataset("diabetes")
+for name in ["haberman", "diabetes", "breast-cancer", "thyroid", "heart-disease"]:
+    print (name)
+    df, cardinality, target, synergies, monotonicities = get_dataset(name)
     df = df[[v for (v, s) in monotonicities] + [target]]
 
     acc = []
@@ -30,7 +33,7 @@ for name in ["haberman", "diabetes", "breast-cancer", "thyroid", "heart-disease"
     uncertain = []
     X, y = df.drop([target], axis=1).to_numpy(), df[target].to_numpy()
     kfold = StratifiedKFold(n_splits=5, shuffle=True, random_state=0)
-    for (train_index, test_index) in tqdm(kfold.split(X, y)):
+    for (train_index, test_index) in tqdm(kfold.split(X, y), total=5):
         cpd = CredalClassifier(target, [c for c in df.columns if c!=target], cardinality, s0=1, sn=1)
         cpd.fit(X[train_index], y[train_index], monotonicities)
         y_pred = cpd.predict(X[test_index])
