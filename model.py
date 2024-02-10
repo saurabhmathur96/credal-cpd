@@ -7,14 +7,15 @@ from sklearn.metrics import euclidean_distances
 from optimization import idm, monotonicity_violation, compute_bounds
 
 class CredalClassifier(BaseEstimator, ClassifierMixin):
-    def __init__(self, target, parents, cardinality, s0=1, sn=10):
+    def __init__(self, target, parents, cardinality, s0=1, sn=10, prior_constraint=False):
         self.cardinality = cardinality
         self.s0 = s0 
         self.sn = sn 
         self.target = target 
         self.parents = parents
+        self.prior_constraint = prior_constraint
 
-    def fit(self, X, y, monotonicities):
+    def fit(self, X, y, monotonicities, epsilon=0.001):
         # Check that X and y have correct shape
         X, y = check_X_y(X, y)
         # Store the classes seen during fit
@@ -33,13 +34,13 @@ class CredalClassifier(BaseEstimator, ClassifierMixin):
         counts = np.zeros((np.prod(parent_cards), target_card))
         for i, value in enumerate(self.cases):
             for j in range(target_card):
-                counts[i, j] = value_counts.get((j, *value), 0) + 1e-6
+                counts[i, j] = value_counts.get((j, *value), 0) 
 
         for s in range(self.s0, self.sn+1):
             t_lower, t_upper, penalty_lower, penalty_upper = compute_bounds(self.target, self.parents, self.cardinality, 
                             self.cases, counts, monotonicities, 
-                            s=s, epsilon=0.001, tolerance=1e-6)
-            if penalty_lower + penalty_lower < 1e-6:
+                            s=s, epsilon=epsilon, tolerance=1e-8, prior_constraint=self.prior_constraint)
+            if penalty_lower + penalty_upper < 2e-8:
                 break
         self.counts = counts
         self.p_lower = idm(counts, s, t_lower)

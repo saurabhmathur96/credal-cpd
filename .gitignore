@@ -159,3 +159,7 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 test.ipynb
+raw-data/ADNI/*
+raw-data/PPD/*
+raw-data/Rare/*
+raw-data/numom2b/*

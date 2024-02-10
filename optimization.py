@@ -13,10 +13,13 @@ def monotonicity_violation(p, parent_index, parent_card, cases, sign, epsilon):
     deltas.append(delta)
   return np.concatenate(deltas)
 
-def compute_bounds(variable, parents, cardinality, cases, counts, monotonicities, s=1, epsilon=0.001, tolerance=1e-6):
+def compute_bounds(variable, parents, cardinality, cases, counts, monotonicities, s=1, epsilon=0.001, tolerance=1e-6, prior_constraint=False):
   def constraint(x):
     t = x.reshape(counts.shape)
-    p = idm(counts, s, t)
+    if prior_constraint:
+      p = idm(counts*0, s, t) # Impose constraint on prior
+    else:
+      p = idm(counts, s, t) # Impose constraint on posterior
     total = 0
     for name, sign in monotonicities:
       i = parents.index(name)
@@ -31,19 +34,18 @@ def compute_bounds(variable, parents, cardinality, cases, counts, monotonicities
   x0_lower = x0_upper = x0
   bounds = Bounds(np.zeros_like(x0), np.ones_like(x0), keep_feasible=True)
 
-  for i in range(10):
-    weight =  10**i
+  penalty_weights = np.power(10, np.arange(0, 10))
+  for weight in [0, *penalty_weights]:
     f_lower = lambda x: np.sum(x) + weight*constraint(x)
-    res_lower = minimize(f_lower, x0=x0_lower, bounds=bounds)  
+    res_lower = minimize(f_lower, x0=x0_lower, bounds=bounds, method="L-BFGS-B")  
     x0_lower = np.clip(res_lower.x, 0, 1)
     
     if constraint(x0_lower) < tolerance:
       break 
   
-  for i in range(10):
-    weight =  10**i
+  for weight in [0, *penalty_weights]:
     f_upper = lambda x: -np.sum(x) + weight*constraint(x)
-    res_upper = minimize(f_upper, x0=x0_upper, bounds=bounds)  
+    res_upper = minimize(f_upper, x0=x0_upper, bounds=bounds, method="L-BFGS-B")  
     x0_upper = np.clip(res_upper.x, 0, 1)
     
     if constraint(x0_upper) < tolerance:
